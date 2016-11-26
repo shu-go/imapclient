@@ -83,8 +83,9 @@ func (c *Client) StartTLS() error {
 	return fmt.Errorf("not implemented")
 }
 
-func (c *Client) Authenticate(mechaname string) ([]byte, error) {
-	return nil, fmt.Errorf("not implemented")
+func (c *Client) Authenticate(mechaname string) error {
+	_, err := c.Command(fmt.Sprintf("AUTHENTICATE %s", mechaname))
+	return err
 }
 
 func (c *Client) Login(username, password string) error {
