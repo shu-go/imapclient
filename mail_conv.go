@@ -142,12 +142,8 @@ func DecodeMailMessage(src *mail.Message, optOnlyHeader ...bool) (dst *mail.Mess
 	}
 
 	//log.Printf("encoding=%v, guessEncoding=%v\n", encoding, guessEncoding)
-	if encoding == "" {
-		if guessEncoding != "" {
-			encoding = guessEncoding
-		} else {
-			encoding = "base64"
-		}
+	if encoding == "" && guessEncoding != "" {
+		encoding = guessEncoding
 	}
 	buff.WriteString("\r\n")
 
@@ -177,6 +173,13 @@ func DecodeMailMessage(src *mail.Message, optOnlyHeader ...bool) (dst *mail.Mess
 				return nil, fmt.Errorf("body reading error q: %v", err)
 			}
 			buff.Write(decodedBody)
+
+		case "":
+			body, err := ioutil.ReadAll(src.Body)
+			if err != nil {
+				return nil, fmt.Errorf("body reading error: %v", err)
+			}
+			buff.Write(body)
 		}
 	}
 
