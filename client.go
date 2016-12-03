@@ -388,6 +388,12 @@ func (c *Client) Fetch(seqSet string) (map[uint32]*mail.Message, error) {
 			rawmsg := make([]string, 0, 10)
 			for s.Scan() {
 				line := s.Text()
+
+				if strings.HasSuffix(line, ")") {
+					rawmsg = append(rawmsg, line[:len(line)-1])
+					line = ")"
+				}
+
 				if strings.HasPrefix(line, ")") {
 					// end of parsing
 					r := strings.NewReader(strings.Join(rawmsg, "\r\n"))
