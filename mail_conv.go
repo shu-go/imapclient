@@ -7,11 +7,13 @@ import (
 	"golang.org/x/text/encoding/japanese"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime"
+	"mime/multipart"
 	"mime/quotedprintable"
 	"net/mail"
 	"strings"
+
+	"bitbucket.org/shu/log"
 )
 
 var _ = log.Print
@@ -70,7 +72,56 @@ func EncodeMailMessage(src *mail.Message) (dst *mail.Message, err error) {
 	return dst, nil
 }
 
-func DecodeMailMessage(src *mail.Message, optOnlyHeader ...bool) (dst *mail.Message, err error) {
+// http://d.hatena.ne.jp/taknb2nch/20140212/1392198485
+func DecodeMailMessage(src *mail.Message, optOnlyHeader ...bool) (dst []*mail.Message, err error) {
+	if src == nil {
+		return nil, nil
+	}
+
+	mediatype, params, err := mime.ParseMediaType(src.Header.Get("Content-Type"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse media type: %v", err)
+	}
+
+	switch strings.Split(mediatype, "/")[0] {
+	case "text", "html", "message":
+		dst, err := decodeMailMessagePart(src, optOnlyHeader...)
+		if err != nil {
+			return nil, err
+		}
+		return []*mail.Message{dst}, err
+
+	case "multipart":
+		dsts := []*mail.Message{}
+
+		boundary := params["boundary"]
+		r := multipart.NewReader(src.Body, boundary)
+		for {
+			part, _ := r.NextPart()
+			if part == nil {
+				break
+			}
+
+			s2 := *src
+			s2.Body = part
+			for k, v := range part.Header {
+				s2.Header[k] = v
+			}
+
+			dst, err := decodeMailMessagePart(&s2, optOnlyHeader...)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse part: %v", err)
+			}
+			dsts = append(dsts, dst)
+		}
+		return dsts, nil
+	}
+
+	//log.Debug("mail_conv:DecodeMailMessage: no matches")
+	return nil, nil
+}
+
+func decodeMailMessagePart(src *mail.Message, optOnlyHeader ...bool) (dst *mail.Message, err error) {
 	if src == nil {
 		return nil, nil
 	}
