@@ -7,10 +7,11 @@ import (
 	//"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"bitbucket.org/shu/log"
 )
 
 var _ = log.Print
@@ -389,24 +390,30 @@ func (c *Client) Fetch(seqSet string) (map[uint32]*mail.Message, error) {
 			for s.Scan() {
 				line := s.Text()
 
-				if strings.HasSuffix(line, ")") {
-					rawmsg = append(rawmsg, line[:len(line)-1])
-					line = ")"
-				}
-
 				if strings.HasPrefix(line, ")") {
-					// end of parsing
-					r := strings.NewReader(strings.Join(rawmsg, "\r\n"))
-					m, err := mail.ReadMessage(r)
-					if err != nil {
-						return nil, fmt.Errorf("failed to read message (of seq %v): %v", seq, err)
-					}
-
-					mails[seq] = m
 					break // end parsing message
 				}
+
 				rawmsg = append(rawmsg, line)
 			}
+
+			// ROUGH trim last )
+			if len(rawmsg) > 0 {
+				last := rawmsg[len(rawmsg)-1]
+				if len(last) > 0 && last[len(last)-1] == ')' {
+					rawmsg[len(rawmsg)-1] = last[:len(last)-1]
+				}
+			}
+
+			//log.Debug("seq", seq)
+			//log.Debug("rawmsg", rawmsg)
+			r := strings.NewReader(strings.Join(rawmsg, "\r\n"))
+			m, err := mail.ReadMessage(r)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read message (of seq %v): %v", seq, err)
+			}
+
+			mails[seq] = m
 		}
 	}
 
