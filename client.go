@@ -14,7 +14,7 @@ import (
 	"bitbucket.org/shu/log"
 )
 
-var _ = log.Print
+var _ = log.Debug
 
 type Client struct {
 	conn *tls.Conn
@@ -283,20 +283,20 @@ func (c *Client) Append(mailbox string, flags []string, message mail.Message) er
 		flagPart = "(" + strings.Join(flags, " ") + ") "
 	}
 
-	//log.Println("==================================================")
-	//log.Printf(os.Stderr, "%v\n", contents)
-	//log.Println("==================================================")
+	//log.Debugln("==================================================")
+	//log.Debugf(os.Stderr, "%v\n", contents)
+	//log.Debugln("==================================================")
 
 	_, err = c.Command(fmt.Sprintf("APPEND \"%v\" %v{%v}", mailbox, flagPart, contentLength))
 	if err != nil {
-		//log.Printf("err: %v\n", err)
+		//log.Debugf("err: %v\n", err)
 		return err
 	}
 
-	//log.Println("sending contents")
+	//log.Debugln("sending contents")
 	_, err = c.Raw("", contents+"\r\n")
 	if err != nil {
-		//log.Printf("err: %v\n", err)
+		//log.Debugf("err: %v\n", err)
 		return err
 	}
 	//_, err = c.Command(contents)
@@ -337,9 +337,9 @@ func (c *Client) Search(criteria string, optLiteral ...string) ([]uint32, error)
 			break
 		}
 
-		//log.Printf("line:%q\n", line)
+		//log.Debugf("line:%q\n", line)
 		idStrs := strings.Split(strings.Trim(line[8:], " "), " ")
-		//log.Printf("idStrs:%#v\n", idStrs)
+		//log.Debugf("idStrs:%#v\n", idStrs)
 		ids := make([]uint32, 0, len(idStrs))
 		for _, id := range idStrs {
 			if id == "" {
@@ -442,33 +442,31 @@ func (c *Client) Logout() error {
 }
 
 func (c *Client) Raw(tag, raw string) (string, error) {
+	log.Debugf("C: %s", raw)
 	if _, err := c.conn.Write([]byte(raw)); err != nil {
 		return "", err
 	}
 
-	//log.Println("==========================================")
-	//log.Print(raw)
-	//log.Println("------------------------------------------")
+	//log.Debugln("==========================================")
+	//log.Debug(raw)
+	//log.Debugln("------------------------------------------")
 
 	// receive response and parse it
 	var resSt string
 	var resLastMyMsg string
 	var resMsg string
 	s := bufio.NewScanner(c.conn)
-	//log.Printf("[%v] scanning\n", tag)
+	log.Debugf("scanning")
 	for s.Scan() {
-		//log.Printf("[%v] s.text()\n", tag)
+		//log.Debugf("[%v] s.text()\n", tag)
 		resline := s.Text()
-		//log.Printf("[%v] %v\n", tag, resline)
+		log.Debugf("S [%s]: %s", tag, resline)
 
 		if len(resline) > 0 && resline[0] == '+' {
-			//log.Printf("%v> %v\n", tag, resline)
 			resSt = "+"
 			resLastMyMsg = resline
 			break
 		}
-
-		//log.Printf("%s> %v\n", tag, resline)
 
 		resMsg += resline + "\r\n"
 
@@ -479,13 +477,13 @@ func (c *Client) Raw(tag, raw string) (string, error) {
 		if resline[0] == tagPrefix {
 			if resSt == "" {
 				stcomps := strings.Split(resline, " ")
-				//log.Printf("status components: %#v\n", stcomps)
+				//log.Debugf("status components: %#v\n", stcomps)
 				var st string
 				if len(stcomps) >= 2 {
 					//TAG RESST REMAININGS
 					st = stcomps[1]
 				}
-				//log.Printf("status: %v\n", st)
+				//log.Debugf("status: %v\n", st)
 
 				switch st {
 				case "OK":
@@ -506,13 +504,16 @@ func (c *Client) Raw(tag, raw string) (string, error) {
 			break
 		}
 	}
+	log.Debugf("finish scanning")
+	log.Debug()
+
 	if err := s.Err(); err != nil {
 		return "", fmt.Errorf("failed to scan result: ", err)
 	}
 
-	//log.Printf("resSt:%v, resLastMyMsg:%v", resSt, string(resLastMyMsg))
+	//log.Debugf("resSt:%v, resLastMyMsg:%v", resSt, string(resLastMyMsg))
 	if resSt != "OK" && resSt != "+" {
-		//log.Printf("not OK nor +: %v\n", string(resLastMyMsg))
+		log.Debugf("not OK nor +: %v", string(resLastMyMsg))
 		return resMsg, fmt.Errorf("%v", string(resLastMyMsg))
 	}
 	return resMsg, nil
