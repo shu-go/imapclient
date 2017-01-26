@@ -436,6 +436,35 @@ func (c *Client) Expunge() error {
 	return nil
 }
 
+func (c *Client) Idle() error {
+	_, err := c.Command("IDLE")
+	return err
+}
+
+func (c *Client) IdleWait() error {
+	_, err := c.Command("IDLE")
+	if err != nil {
+		return err
+	}
+
+	// wait for any response
+
+	r := bufio.NewReader(c.conn)
+	log.Debugf("scanning")
+	buff := make([]byte, 1)
+	r.Read(buff)
+	_, err = r.Discard(r.Buffered())
+	log.Debugf("finish scanning")
+	log.Debug()
+
+	return nil
+}
+
+func (c *Client) Done() error {
+	_, err := c.Raw("", "DONE\r\n")
+	return err
+}
+
 func (c *Client) Logout() error {
 	_, err := c.Command("LOGOUT")
 	return err
