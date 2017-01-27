@@ -357,8 +357,15 @@ func (c *Client) Search(criteria string, optLiteral ...string) ([]uint32, error)
 	return nil, nil
 }
 
-func (c *Client) Fetch(seqSet string) (map[uint32]*mail.Message, error) {
-	res, err := c.Command(fmt.Sprintf("FETCH %v (BODY.PEEK[])", seqSet))
+func (c *Client) Fetch(seqSet string, optHeader ...bool) (map[uint32]*mail.Message, error) {
+	var res string
+	var err error
+	header := len(optHeader) != 0 && optHeader[0]
+	if header {
+		res, err = c.Command(fmt.Sprintf("FETCH %v (BODY.PEEK[HEADER])", seqSet))
+	} else {
+		res, err = c.Command(fmt.Sprintf("FETCH %v (BODY.PEEK[])", seqSet))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -395,6 +402,10 @@ func (c *Client) Fetch(seqSet string) (map[uint32]*mail.Message, error) {
 				}
 
 				rawmsg = append(rawmsg, line)
+			}
+			if header {
+				// empty body makes an EOF error with mail.ReadMessage()
+				rawmsg = append(rawmsg, "")
 			}
 
 			// ROUGH trim last )
