@@ -20,6 +20,8 @@ type Client struct {
 	conn *tls.Conn
 
 	tagCnt uint16 // unused
+
+	name string
 }
 
 type ListItem struct {
@@ -60,6 +62,7 @@ func NewClient(network, addr string) (*Client, error) {
 	return &Client{
 		conn:   conn,
 		tagCnt: 0,
+		name:   time.Now().Format("05.000"),
 	}, nil
 }
 
@@ -482,7 +485,7 @@ func (c *Client) Logout() error {
 }
 
 func (c *Client) Raw(tag, raw string) (string, error) {
-	log.Debugf("C: %s", raw)
+	log.Debugf("%v C: %v", c.name, raw)
 	if _, err := c.conn.Write([]byte(raw)); err != nil {
 		return "", err
 	}
@@ -496,11 +499,11 @@ func (c *Client) Raw(tag, raw string) (string, error) {
 	var resLastMyMsg string
 	var resMsg string
 	s := bufio.NewScanner(c.conn)
-	log.Debugf("scanning")
+	log.Debugf("%v: scanning", c.name)
 	for s.Scan() {
 		//log.Debugf("[%v] s.text()\n", tag)
 		resline := s.Text()
-		log.Debugf("S [%s]: %s", tag, resline)
+		log.Debugf("%v S [%v]: %v", c.name, tag, resline)
 
 		if len(resline) > 0 && resline[0] == '+' {
 			resSt = "+"
@@ -544,8 +547,8 @@ func (c *Client) Raw(tag, raw string) (string, error) {
 			break
 		}
 	}
-	log.Debugf("finish scanning")
-	log.Debug()
+	log.Debugf("%v: finish scanning", c.name)
+	log.Debug(c.name)
 
 	if err := s.Err(); err != nil {
 		return "", fmt.Errorf("failed to scan result: ", err)
@@ -553,7 +556,7 @@ func (c *Client) Raw(tag, raw string) (string, error) {
 
 	//log.Debugf("resSt:%v, resLastMyMsg:%v", resSt, string(resLastMyMsg))
 	if resSt != "OK" && resSt != "+" {
-		log.Debugf("not OK nor +: %v", string(resLastMyMsg))
+		log.Debugf("%v: not OK nor +: %v", c.name, string(resLastMyMsg))
 		return resMsg, fmt.Errorf("%v", string(resLastMyMsg))
 	}
 	return resMsg, nil
