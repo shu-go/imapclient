@@ -86,7 +86,7 @@ func TestConnect(t *testing.T) {
 	ids, err := c.Search("")
 	if err != nil {
 		t.Errorf("List err:%v\n", err)
-	} else if len(ids) != 2 {
+	} else if len(ids) < 2 {
 		t.Errorf("Fetch len:%v\n", len(ids))
 	} else {
 		//for i, id := range ids {
