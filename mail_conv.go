@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"golang.org/x/text/encoding/japanese"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -13,10 +12,8 @@ import (
 	"net/mail"
 	"strings"
 
-	"bitbucket.org/shu/log"
+	"golang.org/x/text/encoding/japanese"
 )
-
-var _ = log.Print
 
 func EncodeMailMessage(src *mail.Message) (dst *mail.Message, err error) {
 	if src == nil {
@@ -237,7 +234,7 @@ func decodeMailMessagePart(src *mail.Message, optOnlyHeader ...bool) (dst *mail.
 	// create mail.Message
 	dst, err = mail.ReadMessage(buff)
 	if err != nil {
-		log.Printf("DECODED\n%s\n", buff)
+		//log.Printf("DECODED\n%s\n", buff)
 		return nil, fmt.Errorf("message reading error: %v", err)
 	}
 

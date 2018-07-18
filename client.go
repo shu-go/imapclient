@@ -3,18 +3,15 @@ package imapclient
 import (
 	"bufio"
 	"crypto/tls"
-	"net/mail"
-	//"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/mail"
 	"strconv"
 	"strings"
 	"time"
-
-	"bitbucket.org/shu/log"
 )
 
-var _ = log.Debug
+//var _ = log.Debug
 
 type Client struct {
 	conn *tls.Conn
@@ -464,12 +461,12 @@ func (c *Client) IdleWait() error {
 	// wait for any response
 
 	r := bufio.NewReader(c.conn)
-	log.Debugf("scanning")
+	//log.Debugf("scanning")
 	buff := make([]byte, 1)
 	r.Read(buff)
 	_, err = r.Discard(r.Buffered())
-	log.Debugf("finish scanning")
-	log.Debug()
+	//log.Debugf("finish scanning")
+	//log.Debug()
 
 	return nil
 }
@@ -485,7 +482,7 @@ func (c *Client) Logout() error {
 }
 
 func (c *Client) Raw(tag, raw string) (string, error) {
-	log.Debugf("%v C: %v", c.name, raw)
+	//log.Debugf("%v C: %v", c.name, raw)
 	if _, err := c.conn.Write([]byte(raw)); err != nil {
 		return "", err
 	}
@@ -499,11 +496,11 @@ func (c *Client) Raw(tag, raw string) (string, error) {
 	var resLastMyMsg string
 	var resMsg string
 	s := bufio.NewScanner(c.conn)
-	log.Debugf("%v: scanning", c.name)
+	//log.Debugf("%v: scanning", c.name)
 	for s.Scan() {
 		//log.Debugf("[%v] s.text()\n", tag)
 		resline := s.Text()
-		log.Debugf("%v S [%v]: %v", c.name, tag, resline)
+		//log.Debugf("%v S [%v]: %v", c.name, tag, resline)
 
 		if len(resline) > 0 && resline[0] == '+' {
 			resSt = "+"
@@ -547,16 +544,16 @@ func (c *Client) Raw(tag, raw string) (string, error) {
 			break
 		}
 	}
-	log.Debugf("%v: finish scanning", c.name)
-	log.Debug(c.name)
+	//log.Debugf("%v: finish scanning", c.name)
+	//log.Debug(c.name)
 
 	if err := s.Err(); err != nil {
-		return "", fmt.Errorf("failed to scan result: ", err)
+		return "", fmt.Errorf("failed to scan result: %v", err)
 	}
 
 	//log.Debugf("resSt:%v, resLastMyMsg:%v", resSt, string(resLastMyMsg))
 	if resSt != "OK" && resSt != "+" {
-		log.Debugf("%v: not OK nor +: %v", c.name, string(resLastMyMsg))
+		//log.Debugf("%v: not OK nor +: %v", c.name, string(resLastMyMsg))
 		return resMsg, fmt.Errorf("%v", string(resLastMyMsg))
 	}
 	return resMsg, nil

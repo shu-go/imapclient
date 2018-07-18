@@ -1,11 +1,9 @@
 package imapclient
 
 import (
-	"bytes"
 	//"encoding/base64"
-	"fmt"
+
 	"io/ioutil"
-	"net/mail"
 	"os"
 	"strings"
 	"testing"
@@ -104,14 +102,16 @@ func TestConnect(t *testing.T) {
 			dm, err := DecodeMailMessage(m)
 			if err != nil {
 				t.Errorf("DecodeMailMessage error: %v", err)
+			} else if len(dm) == 0 {
+				t.Errorf("no DecodeMailMessages")
 			} else {
-				fmt.Fprintf(os.Stderr, "header[%#v]\n", dm.Header)
+				//fmt.Fprintf(os.Stderr, "header[%#v]\n", dm[0].Header)
 
-				body, err := ioutil.ReadAll(dm.Body)
+				_ /*body*/, err := ioutil.ReadAll(dm[0].Body)
 				if err != nil {
 					t.Errorf("DecodeMailMessage error: %v", err)
 				} else {
-					fmt.Fprintf(os.Stderr, "body[%#v]\n", string(body))
+					//fmt.Fprintf(os.Stderr, "body[%#v]\n", string(body))
 				}
 			}
 		}

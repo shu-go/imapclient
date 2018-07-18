@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	//"log"
 
 	"golang.org/x/text/encoding/unicode"
 )
